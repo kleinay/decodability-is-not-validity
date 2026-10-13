@@ -22,7 +22,8 @@
 \title{Decodability Is Not Validity: Evaluating Nuisance Sensitivity\\in Language Model Concept Probes}
 
 \author{Ayal Klein \\
-  \texttt{ayalk@ariel.ac.il}}
+  \texttt{ayalk@ariel.ac.il} \\
+  \small\url{https://github.com/kleinay/decodability-is-not-validity}}
 
 \begin{document}
 \maketitle
@@ -109,7 +110,7 @@ Our claim is narrower than ``probes are invalid'': in-distribution decodability 
 
 \section*{Limitations}
 
-Each dataset has one nuisance; selectivity for unexamined nuisances is unknown. Edits are filtered by two LLM judges rather than validated by humans; the judges agree poorly to moderately, and accepted pairs may be a selective subset (Appendix~\ref{app:edits}); a blinded stratified sample for human annotation will be released with the code. Rule-based edits leave other cues (first names; the topic of religion or sexuality), and accepting only some edits may select easier pairs, although results on all and accepted pairs agree. $\cfn$ is normalized by the class score gap, which is unstable for weak extractors, so we analyze competitive ones; an effect-size normalization (by the within-cell score SD, akin to Cohen's $d$) ranks extractors similarly ($\geq$\robSDMin). Correlated regimes are produced by resampling; they match natural rates for BiasBios and approximately CEBaB, and are a stress test for Civil. Strict equivalence is established for few extractors on CEBaB and Civil. We study linear readouts of mean-pooled (and, as an ablation, last-token) representations of two 7--9B models; nonlinear probes, SAE features and other models are untested. Our measures concern what a score tracks in text, not what the model computes with it.
+Each dataset has one nuisance; selectivity for unexamined nuisances is unknown. Edits are filtered by two LLM judges rather than validated by humans; the judges agree poorly to moderately, and accepted pairs may be a selective subset (Appendix~\ref{app:edits}); the code generates a blinded stratified sample for human annotation. Rule-based edits leave other cues (first names; the topic of religion or sexuality), and accepting only some edits may select easier pairs, although results on all and accepted pairs agree. $\cfn$ is normalized by the class score gap, which is unstable for weak extractors, so we analyze competitive ones; an effect-size normalization (by the within-cell score SD, akin to Cohen's $d$) ranks extractors similarly ($\geq$\robSDMin). Correlated regimes are produced by resampling; they match natural rates for BiasBios and approximately CEBaB, and are a stress test for Civil. Strict equivalence is established for few extractors on CEBaB and Civil. We study linear readouts of mean-pooled (and, as an ablation, last-token) representations of two 7--9B models; nonlinear probes, SAE features and other models are untested. Our measures concern what a score tracks in text, not what the model computes with it.
 
 \section*{Ethics Statement}
 
