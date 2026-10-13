@@ -16,3 +16,5 @@ paper/*.log
 paper/*.bbl
 paper/*.blg
 paper/*.out
+data/edit_sanity_sample.html
+data/edit_sanity_sample.csv
