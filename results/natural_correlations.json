@@ -1,0 +1,8 @@
+{
+ "bios_P(male|surgeon)": 0.8518518518518519,
+ "bios_P(female|nurse)": 0.9084930172133809,
+ "cebab_obs_P(food+|service+)": 0.8011527377521613,
+ "cebab_obs_P(food-|service-)": 0.7262569832402235,
+ "civil_P(toxic|identity)": 0.2368664019942757,
+ "civil_P(toxic|no identity)": 0.10254866709510523
+}

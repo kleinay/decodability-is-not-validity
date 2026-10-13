@@ -1,0 +1,138 @@
+\documentclass[11pt]{article}
+% switch to [review] for anonymous submission
+\usepackage[final]{acl}
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{inconsolata}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+
+\newcommand{\rhot}{\rho_{\text{tr}}}
+\newcommand{\dec}{\textsc{Dec}}
+\newcommand{\cfn}{\textsc{CF}_{N}}
+\newcommand{\cft}{\textsc{CF}_{T}}
+\newcommand{\conf}{\textsc{Conflict}}
+\newcommand{\leak}{\textsc{Leak}}
+\input{tables/numbers}
+
+\title{Decodability Is Not Validity: Evaluating Nuisance Sensitivity\\in Language Model Concept Probes}
+
+\author{Ayal Klein \\
+  \texttt{ayalk@ariel.ac.il}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Two concept probes can be equally accurate at predicting a concept from a language model's hidden states while their scores contain different mixtures of the target concept and a correlated nuisance attribute. We measure how often this happens and what it costs. Across three public datasets that pair a target with a different kind of nuisance (two aspect sentiments; occupation and gender; toxicity and identity mention), two LLMs, and a population of concept extractors, we compare decodability with discriminant evidence about one named nuisance: the score's dependence on the nuisance with the target held fixed, and its response to input edits intended to change only the nuisance, filtered by two LLM judges and compared against placebo edits. Under correlated training data, extractors that are statistically equivalent in held-out AUROC differ several-fold in nuisance sensitivity; decodability is not a reliable proxy for it, and its relationship to nuisance sensitivity changes sign across settings. Where target edits exist (CEBaB), competitive extractors pass them regardless of nuisance sensitivity. Selecting extractors with nuisance-aware development diagnostics, which need nuisance labels but no counterfactuals, lowers counterfactual nuisance sensitivity at a modest accuracy cost. Concept measurements should be validated, not just decoded.
+\end{abstract}
+
+\section{Introduction}
+
+Probes, concept activation vectors and subspace readouts turn a hidden state into a scalar proxy for a concept $T$ in the input \citep{alain2017understanding,kim2018tcav,belinkov2022probing,zou2023representation,marks2024geometry}; the usual evidence for that reading is decodability, i.e.\ predicting held-out labels of $T$. Decodability cannot identify \emph{what} the score measures. For binary $T$ and a nuisance $N$, the scores $s_1=T$ and $s_2=T+\alpha N$ with $0<\alpha<1$ both rank $T$ perfectly, yet only $s_2$ moves when $N$ alone changes. When two extractors are equally accurate, nothing in their accuracy says which one is more selective for $T$.
+
+Measurement theory treats this as a question of construct validity, an evidential and multidimensional property of a score's interpretation rather than a number the score has \citep{cronbach1955construct,messick1995validity,jacobs2021measurement,bean2025measuring}. Part of that evidence is \emph{discriminant}: the score should reflect the intended construct rather than a distinct, possibly correlated one \citep{campbell1959convergent}. Valid measures of correlated constructs can correlate; what discriminant evidence asks is whether the score depends on the other construct \emph{once the target is held fixed}. We study exactly this, for one named nuisance per dataset; passing our tests is necessary evidence about that nuisance, not evidence of validity in general.
+
+That accuracy cannot detect such dependence is not new: probes trained on spuriously correlated data can rely on the spurious attribute \citep{kumar2022probing}, probing accuracy need not reflect use by the model \citep{hewitt2019designing,ravichander2021probing,elazar2021amnesic}, and interventions on representations trade completeness against selectivity \citep{canby2025reliable,huang2024ravel}. Recent work tests whether probes and SAEs disentangle known concepts \citep{mueller2026isolation}, compares concept-subspace estimators \citep{naowarat2026framework}, shows accurate probes can be misaligned \citep{lysnaeslarsen2025probing}, and links embedding-based social measures to confounding and counterfactual validation \citep{li2026proxy}. We ask a narrower question about scalar readouts: among extractors that are accuracy-matched on held-out data, how much does sensitivity to a named nuisance under input edits vary, does it persist without training-set correlation, and can development diagnostics choose better? We answer with a population study over three variable types and two models, using judge-filtered, placebo-controlled input edits (\S\ref{sec:results}), and a comparison of development-set selection criteria (\S\ref{sec:selection}). Our interventions edit the \emph{input text} of frozen models; we make no claim that the extracted directions causally mediate model behavior.
+
+\section{Measuring nuisance selectivity}
+\label{sec:battery}
+
+An \emph{extractor} maps a hidden state $h$ to $s(h)=w^\top z(h)+b$, with $z$ the standardization on training data; subspace methods have a linear readout too, so every extractor is a scalar score. Each dataset supplies a binary target $T$, a binary nuisance $N$ correlated with $T$ in natural data, and edits of the input. Let \mbox{$\rho=P(N{=}1\mid T{=}1)$} \mbox{${}=P(N{=}0\mid T{=}0)$} with balanced $T$. Extractors are trained at $\rhot\in\{0.5,0.7,0.9\}$; test metrics reweight the four $(T,N)$ cells of one fixed test pool.
+
+\noindent\textbf{\dec{}}: AUROC of $s$ for $T$ at $\rho=\rhot$ (in-distribution decodability, the standard criterion).\\
+\textbf{$|$\leak{}$|$}: $\tfrac12\sum_{t}|\mathrm{AUROC}(s\to N\mid T{=}t)-0.5|$, dependence on $N$ with the target held fixed. The absolute form avoids cancelling opposite dependences in the two target classes.\\
+\textbf{\conf{}}: AUROC for $T$ on the cells with $T\neq N$ (a fully reversed correlation). A stress test, not a validity measure: there, $s=-N$ also ranks $T$ perfectly.\\
+\textbf{$\cfn$}: mean change in $s$ under edits that flip only $N$, signed toward the $N$ value that co-occurs with $T{=}1$, divided by the mean score gap between the $T$ classes on the decorrelated pool ($\Delta_T$). As a signed mean can hide opposite changes, we also report $|\cfn|$ (mean absolute change over $\Delta_T$) and compare with \emph{placebo} edits that change neither variable.\\
+\textbf{$\cft$}: the same quantity for edits that flip $T$ (CEBaB only), i.e.\ convergent counterfactual evidence.
+
+\section{Setup}
+\label{sec:setup}
+
+\begin{table}[t]
+\centering\small\setlength{\tabcolsep}{2pt}
+\resizebox{\columnwidth}{!}{\input{tables/tab_data}}
+\caption{Datasets: the variable pairs differ in kind (two evaluative aspects of one text; an occupation and an attribute of its subject; a pragmatic property and a topic). Edits: generated pairs; judged by both: pairs rated by both LLM judges (BiasBios: a random subset); accepted: share of jointly judged pairs both accept (\S\ref{sec:setup}). Civil: forward/reverse identity swaps.}
+\label{tab:data}
+\end{table}
+
+\paragraph{Data and edits} (Table~\ref{tab:data}). \textbf{CEBaB} \citep{abraham2022cebab}: restaurant reviews with aspect labels and human-written counterfactual edits; we pair each original test review with edits that flip food (or, for $\cft$, service) sentiment and leave the other aspect's label unchanged; splits are disjoint by review family, and bootstrap CIs resample families. \textbf{BiasBios} \citep{dearteaga2019bias}: surgeon vs.\ nurse biographies; $N$ is the subject's gender, edited by swapping pronouns and gendered nouns in both directions. \textbf{CivilComments} (WILDS; \citealp{borkan2019nuanced,koh2021wilds}): toxicity, with $N$ a human annotation that the comment mentions Muslims or LGBTQ people; we swap those identity terms for Christian/straight terms and, on 400 further comments, ``Christian'' for ``Muslim'' \citep{dixon2018measuring,garg2019counterfactual}, and average the two directions. We keep up to 1{,}100/250/400 training/development/test texts per $(T,N)$ cell and train on samples of 2{,}000. Correlated regimes are realistic: in BiasBios, $P(\text{male}\mid\text{surgeon})=0.85$ and $P(\text{female}\mid\text{nurse})=0.91$; in unedited CEBaB reviews, 0.80 and 0.73.
+
+\paragraph{Edit validation.} Two distinct judge models, neither identical to a probed model (Qwen3-32B, run locally, which shares a model family with Qwen2.5-7B; and gpt-oss-120b), see each pair in random order, without being told which text is edited or which attribute should change, and say whether the target and the nuisance are the same, rate each text's fluency, and flag other meaning changes. Acceptance is a conservative filter, not verified correctness: a nuisance edit is \emph{accepted} if both judges find the target unchanged and the nuisance changed, with no major other meaning change and no fluency drop. All counterfactual results use accepted pairs only (Appendix~\ref{app:edits}). Identity swaps are often rejected for changing a claim about a group, not just its name (Table~\ref{tab:data}). Placebo edits replace neutral words with synonyms (all datasets), or ``Christian'' with ``Protestant'' (Civil).
+
+\paragraph{Models and extractors.} Qwen2.5-7B-Instruct \citep{qwen2025qwen25} and Gemma-2-9B-it \citep{gemma2024gemma2}, frozen; residual stream mean-pooled over non-special tokens at 7 depths. Per layer: difference of class means; $\ell_2$ logistic regression ($C\in\{10^{-3},\dots,10\}$); partial least squares ($k\in\{2,4,8,16\}$; $k{=}1$ equals the mean difference and is dropped); and a \emph{nuisance-erased} probe that projects out the within-class nuisance mean differences, estimated on the training sample only (cf.\ \citealp{ravfogel2020null,belrose2023leace}) before logistic regression. The first three families use no nuisance labels (\emph{standard}, 70 per setting); the erased probe adds 35. Each is fit on three training samples. An extractor is \emph{near-best} if its test \dec{} is within 0.01 of the best, and \emph{equivalent} to the best if a paired-bootstrap 90\% CI of the \dec{} difference lies inside $\pm0.01$ (TOST at $\alpha=0.05$). Because the reference is selected on the test pool, these equivalence results are descriptive; the selection comparisons (\S\ref{sec:selection}) choose on development data only.
+
+\section{Results}
+\label{sec:results}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figs/fig_main_qwen7b.pdf}
+\caption{Competitive extractors (\dec{} within 0.05 of the best; Qwen2.5-7B; mean over 3 training samples): test decodability vs.\ nuisance sensitivity $\cfn$ on accepted edits (0: no net shift; 1: the nuisance edit shifts the score as much as a change of target class). Black symbols: the extractor that each training sample selects on development data by maximal \dec{} (ring) or maximal \conf{} (star), standard extractors only. Gemma-2-9B: Appendix~\ref{app:more}.}
+\label{fig:main}
+\end{figure*}
+
+\begin{table}[t]
+\centering\small\setlength{\tabcolsep}{2pt}
+\resizebox{\columnwidth}{!}{\input{tables/tab_near}}
+\caption{Standard extractors that are near-best (test \dec{} within 0.01 of the best) and, in parentheses, statistically \emph{equivalent} to the best (TOST, margin 0.01). Q: Qwen2.5-7B; G: Gemma-2-9B. $\rhot=0.7$: Appendix~\ref{app:more}.}
+\label{tab:near}
+\end{table}
+
+\paragraph{Accuracy-matched extractors differ in nuisance sensitivity.} With correlated training data ($\rhot=0.9$), extractors equivalent to the best in decodability span $\cfn$ from \eqCFmincebabQNine{} to \eqCFmaxcebabQNine{} on CEBaB (Qwen; Gemma \eqCFmincebabGNine--\eqCFmaxcebabGNine): for some, rewriting only the food sentence of a review shifts the ``service'' score most of the way to the other service class. On BiasBios \dec{} is at ceiling for nearly all extractors (\eqNbiosQNine{} equivalent to the best), while pronoun swaps shift the occupation score by \eqCFminbiosQNine--\eqCFmaxbiosQNine{} of the surgeon--nurse gap. On Civil few extractors pass the strict equivalence test, but every near-best one has $\conf{}<0.5$: the most decodable toxicity scores rank non-toxic comments about Muslims or LGBTQ people above toxic comments that mention neither. All $\cfn$ values use accepted edits; extractor rankings agree with those on all edits ($\geq$\robAllValMin) and under SD normalization ($\geq$\robSDMin), and signed and absolute $\cfn$ agree at $\rhot\geq0.7$ ($\geq$\robAbsMinSevenUp; Appendix~\ref{app:edits}). Placebo edits barely move scores (median $|\cfn|$ \placeboMin--\placeboMax, vs.\ \nuisAbsNineMin--\nuisAbsNineMax{} for nuisance edits at $\rhot=0.9$).
+
+\paragraph{With decorrelated training, the directional effect mostly disappears.} At $\rhot=0.5$, near-best extractors show little net nuisance shift on BiasBios and Civil (signed $\cfn$ within $\pm0.08$ on accepted edits) and less on CEBaB (\nbCFmincebabQFive--\nbCFmaxcebabQFive, Qwen). Example-level shifts remain on CEBaB, though: median $|\cfn|$ is \absCFcebabQFive{} against a signed \sgnCFcebabQFive{} (Qwen; placebo \placebocebabQFive, for smaller edits). Training-set correlation drives the systematic reliance on the nuisance. A second source is geometric: on CEBaB the target direction and the within-class food direction are highly aligned (cosine \cosMincebab--\cosMaxcebab{} across layers and models; BiasBios \cosMinbios--\cosMaxbios), and this observational geometry alone approximately predicts the counterfactual food sensitivity of the difference-of-means direction trained on decorrelated data (predicted \predMincebab--\predMaxcebab, observed \obsMincebab--\obsMaxcebab; mean absolute error \geomMAEcebab; BiasBios \geomMAEbios). Discriminative probes are much less affected. In a synthetic representation, overlap raises $\cfn$ far more than it changes decodability (Appendix~\ref{app:synthetic}).
+
+\paragraph{Decodability is not a reliable proxy, and on CEBaB target edits do not arbitrate.} Among competitive standard extractors at $\rhot=0.9$, the rank correlation between \dec{} and $\cfn$ ranges from \corrCFmin{} to \corrCFmax{} and changes sign across settings (descriptive bootstrap intervals in Appendix~\ref{app:more}). On CEBaB every near-best extractor, in every regime, responds fully to genuine \emph{service} edits ($\cft$ \cfTmin--\cfTmax) while its food sensitivity ranges over \cfNnbMin--\cfNnbMax. Here only nuisance edits separate more from less selective scores.
+
+\paragraph{A fixed-method comparison.} Choosing each family's layer and hyperparameter on development data, the logistic probe and the nuisance-erased probe are equivalent in \dec{} on BiasBios at $\rhot=0.9$ (difference \fpDdbiosQNine, 90\% CI [\fpLobiosQNine, \fpHibiosQNine], Qwen) yet $\cfn$ is \fpCFlrbiosQNine{} vs.\ \fpCFnebiosQNine{} (Gemma: \fpCFlrbiosGNine{} vs.\ \fpCFnebiosGNine). On CEBaB ($\rhot=0.9$) equivalence is not established (CI up to \fpHicebabQNine) while $\cfn$ falls from \fpCFlrcebabQNine{} to \fpCFnecebabQNine{} (Appendix~\ref{app:more}). Erasure lowers but does not remove nuisance sensitivity: linear guarding on training data is not invariance to edits.
+
+\subsection{Selecting for nuisance selectivity}
+\label{sec:selection}
+
+\begin{table}[t]
+\centering\small\setlength{\tabcolsep}{2pt}
+\resizebox{\columnwidth}{!}{\input{tables/tab_select_main}}
+\caption{Selecting an extractor on development data at $\rhot=0.9$: test $\cfn$ (accepted edits) of the extractor chosen by maximal \dec{} (standard practice), maximal \conf{}, or minimal $|$\leak{}$|$ among extractors within 0.01 of the best development \dec{}; change in test \dec{} in parentheses. Means over 3 training samples; $^\dagger$: $\cfn$ did not fall in every sample. More criteria: Appendix~\ref{app:more}.}
+\label{tab:select}
+\end{table}
+
+Practitioners choose a layer and hyperparameters by development accuracy. Table~\ref{tab:select} compares this with nuisance-aware criteria that need nuisance labels on development data but no counterfactuals. Among standard extractors, choosing by \conf{} lowers $\cfn$ in every dataset, model and training sample (by \selStdConfCFmin--\selStdConfCFmax) at a mean \dec{} cost of at most \selStdConfDecMeanWorst{} (\selStdConfDecWorst{} in the worst training sample); it lowers $|\cfn|$ as well, so it is not selecting scores that rely on the opposite of the nuisance. The leakage-constrained rule is similarly effective except on Civil with Gemma; a combined \dec{}$-|$\leak{}$|$ rule behaves similarly (Appendix~\ref{app:more}). When the nuisance-erased probe is available, \conf{} and \dec{}$-|$\leak{}$|$ select it in every sample (the leakage-constrained rule in \neShareMinLeak), and with \conf{} $\cfn$ falls by \selFullConfCFmin--\selFullConfCFmax{} at a mean \dec{} cost of at most \selFullConfDecMeanWorst{} (on Civil, where the nuisance is predictive in-distribution). These accuracy costs are modest, not zero.
+
+\section{Discussion}
+
+Our claim is narrower than ``probes are invalid'': in-distribution decodability is not a reliable proxy for selectivity with respect to a named nuisance. Equally decodable scores can carry very different amounts of nuisance, mainly through correlations in the probe's training data and, in CEBaB, overlapping target and nuisance geometry. A claim that a direction \emph{measures} a concept should name plausible nuisances and report discriminant diagnostics and, where possible, nuisance-only edits; on CEBaB, target edits were passed regardless. Low nuisance sensitivity is necessary discriminant evidence about one nuisance, not construct validity \citep{messick1995validity,licht2025measuring}.
+
+\section*{Limitations}
+
+Each dataset has one nuisance; selectivity for unexamined nuisances is unknown. Edits are filtered by two LLM judges rather than validated by humans; the judges agree poorly to moderately, and accepted pairs may be a selective subset (Appendix~\ref{app:edits}); a blinded stratified sample for human annotation will be released with the code. Rule-based edits leave other cues (first names; the topic of religion or sexuality), and accepting only some edits may select easier pairs, although results on all and accepted pairs agree. $\cfn$ is normalized by the class score gap, which is unstable for weak extractors, so we analyze competitive ones; an effect-size normalization (by the within-cell score SD, akin to Cohen's $d$) ranks extractors similarly ($\geq$\robSDMin). Correlated regimes are produced by resampling; they match natural rates for BiasBios and approximately CEBaB, and are a stress test for Civil. Strict equivalence is established for few extractors on CEBaB and Civil. We study linear readouts of mean-pooled (and, as an ablation, last-token) representations of two 7--9B models; nonlinear probes, SAE features and other models are untested. Our measures concern what a score tracks in text, not what the model computes with it.
+
+\section*{Ethics Statement}
+
+Two datasets involve gender and religious or sexual identity. Concept scores used for auditing or monitoring can encode such attributes while passing accuracy checks; our diagnostics complement, and do not replace, fairness evaluation. The gender swap follows the dataset's binary annotation.
+
+\bibliography{refs}
+
+\appendix
+
+\section{Edit validation and robustness}
+\label{app:edits}
+\input{appendix_edits}
+
+\section{Further results}
+\label{app:more}
+\input{appendix_more}
+
+\section{Synthetic representation}
+\label{app:synthetic}
+\input{appendix_synthetic}
+
+\section{Reproducibility and implementation audit}
+\label{app:repro}
+\input{appendix_repro}
+
+\end{document}

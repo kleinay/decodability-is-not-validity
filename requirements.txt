@@ -1,0 +1,11 @@
+# versions used for the paper
+numpy==2.5.2
+pandas==3.0.5
+scipy==1.18.0
+scikit-learn==1.9.0
+torch==2.13.0
+transformers==5.15.1
+datasets==5.0.1
+matplotlib==3.11.1
+joblib==1.5.3
+pyarrow==25.0.1

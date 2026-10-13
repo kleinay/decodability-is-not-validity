@@ -1,0 +1,18 @@
+# large or regenerable artifacts
+data/*/acts_*.npz
+results/scores_*.npz
+logs/
+__pycache__/
+*.pyc
+# derived dataset texts: regenerated deterministically by scripts/01*.py from the public datasets
+data/*/texts.parquet
+data/human_audit_sample.csv
+data/human_audit_key.csv
+# LaTeX build products / old drafts / template
+paper/main_v2_submitted.tex
+paper/acl_latex.tex
+paper/*.aux
+paper/*.log
+paper/*.bbl
+paper/*.blg
+paper/*.out

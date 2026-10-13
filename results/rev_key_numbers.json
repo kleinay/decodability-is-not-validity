@@ -1,0 +1,20 @@
+{
+ "cf_pair_subset": "val",
+ "geometry_spearman_pred_obs": 0.8144396726359291,
+ "geometry_pearson_pred_obs": 0.9220365298434741,
+ "geometry_cos_by_dataset": {
+  "bios": {
+   "min": 0.05700000002980232,
+   "max": 0.17800000309944153
+  },
+  "cebab": {
+   "min": 0.656000018119812,
+   "max": 0.8299999833106995
+  },
+  "civil": {
+   "min": -0.3869999945163727,
+   "max": 0.17100000381469727
+  }
+ },
+ "n_extractors_dedup_per_setting": 105
+}

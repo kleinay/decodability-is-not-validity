@@ -1,0 +1,33 @@
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figs/fig_main_gemma9b.pdf}
+\caption{As Figure~\ref{fig:main}, for Gemma-2-9B-it.}
+\end{figure*}
+
+\begin{table}[h]
+\centering\small\setlength{\tabcolsep}{2pt}
+\resizebox{\columnwidth}{!}{\input{tables/tab_near_rho07}}
+\caption{As Table~\ref{tab:near}, at $\rhot=0.7$ (equivalence tests were run at $\rhot\in\{0.5,0.9\}$ only).}
+\end{table}
+
+\begin{table}[h]
+\centering\small\setlength{\tabcolsep}{2pt}
+\resizebox{\columnwidth}{!}{\input{tables/tab_corr}}
+\caption{Spearman correlation of test \dec{} with each facet across competitive standard extractors, with 95\% bootstrap CIs over extractors. Hyperparameter variants of one family are not independent, so CIs are descriptive.}
+\end{table}
+
+\begin{table}[h]
+\centering\small\setlength{\tabcolsep}{2pt}
+\resizebox{\columnwidth}{!}{\input{tables/tab_fixed}}
+\caption{Logistic probe vs.\ nuisance-erased probe, each family's layer and hyperparameter chosen on development \dec{} (training sample 0). Equiv.: 90\% CI of the \dec{} difference within $\pm0.01$.}
+\end{table}
+
+\paragraph{Readout ablation.} Reading the last non-special token instead of mean pooling (Qwen2.5-7B, Table~\ref{tab:pooling}) preserves the pattern: under correlated training, near-best extractors differ substantially in $\cfn$, decorrelated training largely removes it, and Conflict-based selection lowers $\cfn$. On Civil the last-token readout is less decodable and the selection costs considerably more accuracy.
+
+\IfFileExists{tables/tab_pooling.tex}{\input{tables/tab_pooling}}{}
+
+\begin{table*}[t]
+\centering\small
+\resizebox{\textwidth}{!}{\input{tables/tab_select}}
+\caption{All development-set selection criteria at $\rhot=0.9$ (as Table~\ref{tab:select}), for standard extractors and with the nuisance-erased probe.}
+\end{table*}

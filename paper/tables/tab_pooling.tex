@@ -1,0 +1,19 @@
+\begin{table}[h]
+\centering\small\setlength{\tabcolsep}{2pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}llccccc@{}}
+\toprule
+ & & \multicolumn{2}{c}{$\rhot=0.9$} & \multicolumn{2}{c}{$\rhot=0.5$} & selection, $\rhot=0.9$ \\
+data & readout & best \dec{} & $\cfn$ near-best & best \dec{} & $\cfn$ near-best & $\cfn$: \dec{}$\to$\conf{} ($\Delta$\dec{}) \\
+\midrule
+CEBaB & mean & .966 & .46--.89 & .924 & .02--.28 & .69$\to$.54 ($-$.012) \\
+CEBaB & last token & .968 & .51--.76 & .921 & .15--.27 & .56$\to$.49 ($-$.003) \\
+BiasBios & mean & .998 & .08--.41 & .995 & $-$.04--.04 & .20$\to$.12 ($-$.001) \\
+BiasBios & last token & .998 & .09--.66 & .994 & $-$.05--.01 & .27$\to$.09 ($-$.005) \\
+Civil & mean & .932 & .24--.45 & .829 & .04--.08 & .43$\to$.33 ($-$.018) \\
+Civil & last token & .904 & .67--.67 & .794 & .01--.05 & .67$\to$.09 ($-$.156) \\
+\bottomrule
+\end{tabular}}
+\caption{Readout ablation (Qwen2.5-7B, standard extractors, accepted edits): mean pooling vs.\ the last non-special token.}
+\label{tab:pooling}
+\end{table}
