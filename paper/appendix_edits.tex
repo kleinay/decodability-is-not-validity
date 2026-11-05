@@ -17,7 +17,7 @@ Table~\ref{tab:judges} reports, per judge and edit kind, how often the judge fou
 \label{tab:agree}
 \end{table}}{}
 
-\paragraph{Robustness of $\cfn$.} Table~\ref{tab:robust} gives rank correlations, across competitive extractors, between $\cfn$ computed on all vs.\ accepted edits; normalized by $\Delta_T$ vs.\ by the pooled within-cell score SD; signed vs.\ absolute; for the two edit directions separately (CEBaB, BiasBios, Amazon); and for the forward vs.\ reverse Civil swaps. At $\rhot=0.5$ on CEBaB the signed effect is small while the absolute change is not (median $|\cfn|$ \absCFcebabQFive{} vs.\ signed \sgnCFcebabQFive{}, Qwen), which is why the direction-wise rankings agree less there. Placebo edits are smaller than CEBaB's human rewrites, so the placebo floor is not magnitude-matched for CEBaB. \IfFileExists{tables/tab_placebo.tex}{\input{tables/tab_placebo}}{}
+\paragraph{Robustness of $\cfn$.} Table~\ref{tab:robust} gives rank correlations, across competitive extractors, between $\cfn$ computed on all vs.\ accepted edits; normalized by $\Delta_T$ vs.\ by the pooled within-cell score SD; signed vs.\ absolute; for the two edit directions separately (CEBaB, BiasBios, Amazon); and for the forward vs.\ reverse Civil swaps. At $\rhot=0.5$ on CEBaB the signed effect is small while the absolute change is not (median $|\cfn|$ \absCFcebabQFive{} vs.\ signed \sgnCFcebabQFive{}, Qwen), which is why the direction-wise rankings agree less there. Placebo edits are smaller than CEBaB's human rewrites, so the placebo floor is not magnitude-matched for CEBaB.
 
 \begin{table}[h]
 \centering\small\setlength{\tabcolsep}{2pt}
