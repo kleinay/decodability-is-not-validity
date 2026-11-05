@@ -2,23 +2,31 @@
 \toprule
 data & edit kind & $n$ & judge & $T$ kept & $N$ changed & fluency drop & major other & accepted \\
 \midrule
-BiasBios & nuisance & 800 & gpt-oss-120b & .95 & .98 & .02 & .02 & .90 \\
-BiasBios & nuisance & 1589 & qwen3-32b & .98 & .98 & .23 & .02 & .74 \\
-BiasBios & placebo & 400 & gpt-oss-120b & .96 & .00 & .01 & .00 & .98 \\
-BiasBios & placebo & 961 & qwen3-32b & .98 & .00 & .42 & .00 & .58 \\
+Amazon-1P & nuisance & 1083 & Qwen3.8-27B & .98 & 1.00 & .21 & .00 & .74 \\
+Amazon-1P & nuisance & 1083 & gpt-oss-120b & .98 & 1.00 & .16 & .00 & .82 \\
+Amazon-1P & placebo & 567 & Qwen3.8-27B & .99 & .00 & .21 & .00 & .71 \\
+Amazon-1P & placebo & 567 & gpt-oss-120b & .98 & .00 & .12 & .00 & .88 \\
+Amazon-Neg & nuisance & 1427 & Qwen3.8-27B & .97 & 1.00 & .13 & .06 & .61 \\
+Amazon-Neg & nuisance & 1427 & gpt-oss-120b & .98 & 1.00 & .03 & .02 & .90 \\
+Amazon-Neg & placebo & 608 & Qwen3.8-27B & .99 & .00 & .21 & .00 & .72 \\
+Amazon-Neg & placebo & 608 & gpt-oss-120b & .98 & .00 & .11 & .00 & .88 \\
+BiasBios & nuisance & 1561 & Qwen3-32B & .98 & .99 & .03 & .01 & .94 \\
+BiasBios & nuisance & 1561 & gpt-oss-120b & .99 & .99 & .01 & .00 & .96 \\
+BiasBios & placebo & 961 & Qwen3-32B & .98 & .00 & .42 & .00 & .58 \\
+BiasBios & placebo & 400 & gpt-oss-120b & .98 & .00 & .03 & .00 & .97 \\
+CEBaB & nuisance & 210 & Qwen3-32B & .62 & .97 & .15 & .32 & .44 \\
 CEBaB & nuisance & 210 & gpt-oss-120b & .93 & .98 & .05 & .22 & .69 \\
-CEBaB & nuisance & 210 & qwen3-32b & .62 & .97 & .15 & .32 & .44 \\
+CEBaB & placebo & 158 & Qwen3-32B & .91 & .01 & .51 & .00 & .46 \\
 CEBaB & placebo & 158 & gpt-oss-120b & 1.00 & .00 & .08 & .00 & .92 \\
-CEBaB & placebo & 158 & qwen3-32b & .91 & .01 & .51 & .00 & .46 \\
+CEBaB & target & 125 & Qwen3-32B & .00 & .08 & .10 & .27 & .55 \\
 CEBaB & target & 125 & gpt-oss-120b & .02 & .10 & .03 & .16 & .76 \\
-CEBaB & target & 125 & qwen3-32b & .00 & .08 & .10 & .27 & .55 \\
+Civil & nuisance & 762 & Qwen3-32B & .45 & .98 & .13 & .72 & .17 \\
 Civil & nuisance & 762 & gpt-oss-120b & 1.00 & .97 & .00 & .62 & .36 \\
-Civil & nuisance & 762 & qwen3-32b & .45 & .98 & .13 & .72 & .17 \\
+Civil & nuisance rev & 400 & Qwen3-32B & .63 & .99 & .09 & .53 & .34 \\
 Civil & nuisance rev & 400 & gpt-oss-120b & 1.00 & .98 & .00 & .36 & .62 \\
-Civil & nuisance rev & 400 & qwen3-32b & .63 & .99 & .09 & .53 & .34 \\
+Civil & placebo & 480 & Qwen3-32B & .88 & .00 & .53 & .00 & .44 \\
 Civil & placebo & 480 & gpt-oss-120b & 1.00 & .00 & .06 & .00 & .94 \\
-Civil & placebo & 480 & qwen3-32b & .88 & .00 & .53 & .00 & .44 \\
+Civil & placebo group & 400 & Qwen3-32B & .80 & .89 & .06 & .19 & .64 \\
 Civil & placebo group & 400 & gpt-oss-120b & 1.00 & .90 & .00 & .06 & .94 \\
-Civil & placebo group & 400 & qwen3-32b & .80 & .89 & .06 & .19 & .64 \\
 \bottomrule
 \end{tabular}

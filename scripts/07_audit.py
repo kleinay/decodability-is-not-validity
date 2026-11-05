@@ -16,6 +16,7 @@ from transformers import AutoTokenizer
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
+from dv.datasets import ALL as DATASETS  # noqa: E402
 from dv.extractors import fit_extractor  # noqa: E402
 
 out = ["# Implementation audit (scripts/07_audit.py)\n"]
@@ -29,7 +30,7 @@ def check(cond, msg):
 
 
 # ---------------------------------------------------------------- 1, 2
-for ds in ["cebab", "bios", "civil"]:
+for ds in DATASETS:
     tx = pd.read_parquet(ROOT / f"data/{ds}/texts.parquet")
     pr = pd.read_parquet(ROOT / f"data/{ds}/pairs.parquet")
     out.append(f"\n## {ds}")
@@ -43,6 +44,10 @@ for ds in ["cebab", "bios", "civil"]:
             same = all((lab.loc[g.uid_a, c].values == lab.loc[g.uid_b, c].values).all() for c in ["T", "N"])
             check(same, f"{kind}: T and N labels identical for source and edit in all {len(g)} pairs")
             continue
+        if kind in ("nuisance", "nuisance_rev", "nuisance_rule"):  # a nuisance edit must not change the target label
+            ta, tb = lab.loc[g.uid_a, "T"].values, lab.loc[g.uid_b, "T"].values
+            check(((ta == tb) | (np.isnan(ta) & np.isnan(tb))).all(),  # CEBaB: unlabelled service on both sides
+                  f"{kind}: T label identical for source and edit in all {len(g)} pairs")
         col = "T" if kind == "target" else "N"
         a, b = lab.loc[g.uid_a, col].values, lab.loc[g.uid_b, col].values
         good = np.isfinite(a) & np.isfinite(b)
@@ -59,10 +64,10 @@ for ds in ["cebab", "bios", "civil"]:
 
 # ---------------------------------------------------------------- 3
 out.append("\n## PLS(k=1) vs difference of means")
-for ds in ["cebab", "bios", "civil"]:
+for ds in DATASETS:
     tx = pd.read_parquet(ROOT / f"data/{ds}/texts.parquet")
     A = np.load(ROOT / f"data/{ds}/acts_qwen7b.npz", allow_pickle=True)
-    tr = np.where((tx.split == "train") & tx["T"].notna() & tx["N"].notna())[0][:2000]
+    tr = np.random.RandomState(0).permutation(np.where((tx.split == "train") & tx["T"].notna() & tx["N"].notna())[0])[:2000]
     X = A["X"][tr, 4]
     Z = (X - X.mean(0)) / (X.std(0) + 1e-6)
     t, n = tx["T"].values[tr].astype(int), tx["N"].values[tr].astype(int)
@@ -76,7 +81,7 @@ out.append("  (PLS-1 weight ∝ Zᵀ(t-t̄) ∝ μ₁-μ₀ exactly when classes
 # ---------------------------------------------------------------- 4
 out.append("\n## Truncation and edit length (Qwen tokenizer)")
 tok = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-7B-Instruct")
-for ds in ["cebab", "bios", "civil"]:
+for ds in DATASETS:
     tx = pd.read_parquet(ROOT / f"data/{ds}/texts.parquet").set_index("uid")
     pr = pd.read_parquet(ROOT / f"data/{ds}/pairs.parquet")
     L = pd.Series([len(x) for x in tok(list(tx.text))["input_ids"]], index=tx.index)
@@ -113,7 +118,7 @@ def auc(y, s, w=None):
 
 rng = np.random.RandomState(0)
 maxdiff = {}
-for ds in ["cebab", "bios", "civil"]:
+for ds in DATASETS:
     tx = pd.read_parquet(ROOT / f"data/{ds}/texts.parquet")
     pr = pd.read_parquet(ROOT / f"data/{ds}/pairs.parquet")
     for model in ["qwen7b", "gemma9b"]:

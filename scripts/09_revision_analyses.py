@@ -26,6 +26,7 @@ ROOT = Path(__file__).resolve().parents[1]
 RES = ROOT / "results"
 sys.path.insert(0, str(ROOT / "src"))
 from dv import validity as V  # noqa: E402
+from dv.datasets import ALL as DATASETS, JUDGES  # noqa: E402
 from dv.judging import accept  # noqa: E402
 
 MODELS = sys.argv[1:] or ["qwen7b", "gemma9b"]
@@ -36,7 +37,7 @@ rng = np.random.RandomState(0)
 # ---------------------------------------------------------------- load & merge
 def load():
     rows = []
-    for ds in ["cebab", "bios", "civil"]:
+    for ds in DATASETS:
         for mo in MODELS:
             p = pd.read_parquet(RES / f"pop_{ds}_{mo}.parquet")
             p["key"] = p.layer.astype(str) + "|" + p.rho.astype(str) + "|" + p.seed.astype(str) + "|" + p.extractor
@@ -211,7 +212,7 @@ E.to_csv(RES / "rev_E_fixed_pair.csv", index=False)
 
 # ---------------------------------------------------------------- F geometry
 rows = []
-for ds in ["cebab", "bios", "civil"]:
+for ds in DATASETS:
     tx = pd.read_parquet(ROOT / f"data/{ds}/texts.parquet")
     for mo in MODELS:
         A_ = np.load(ROOT / f"data/{ds}/acts_{mo}.npz", allow_pickle=True)
@@ -238,10 +239,10 @@ KN["geometry_cos_by_dataset"] = F.groupby("dataset").cos_T_N.agg(["min", "max"])
 
 # ---------------------------------------------------------------- G edit validation
 rows = []
-for ds in ["cebab", "bios", "civil"]:
+for ds in DATASETS:
     pr = pd.read_parquet(ROOT / f"data/{ds}/pairs.parquet")
     jl = {}
-    for jn, fn in [("qwen3_32b", "judge.parquet"), ("gpt_oss_120b", "judge_groq.parquet")]:
+    for jn, fn in zip(JUDGES[ds], ["judge.parquet", "judge_groq.parquet"]):
         p = ROOT / f"data/{ds}/{fn}"
         if p.exists():
             jl[jn] = pd.read_parquet(p)
@@ -250,7 +251,10 @@ for ds in ["cebab", "bios", "civil"]:
         for kind, g in j.groupby("kind"):
             gi = g.index
             rows.append(dict(dataset=ds, judge=jn, kind=kind, n=len(g),
-                             target_same=y("target_same")[gi].mean(), nuis_changed=j.nuis_same[gi].astype(str).str.startswith("no").mean(),
+                             target_same=y("target_same")[gi].mean(),
+                             nuis_changed=(j.nuis_flip_regex[gi].astype(bool).mean() if "nuis_flip_regex" in j
+                                           else j.nuis_same[gi].astype(str).str.startswith("no").mean()),
+                             strength_same=y("strength_same")[gi].mean() if "strength_same" in j else np.nan,
                              edit_fluent=y("edit_fluent")[gi].mean(), src_fluent=y("src_fluent")[gi].mean(),
                              other_major=j.other_change[gi].astype(str).str.startswith("major").mean(),
                              fluency_drop=(j.edit_fluent[gi].astype(str).str.startswith("no") & j.src_fluent[gi].astype(str).str.startswith("yes")).mean(),
@@ -259,7 +263,7 @@ G = pd.DataFrame(rows)
 G.to_csv(RES / "rev_G_judges.csv", index=False)
 # agreement on the accept/reject decision where both judges rated the pair
 agree = []
-for ds in ["cebab", "bios", "civil"]:
+for ds in DATASETS:
     a, b = ROOT / f"data/{ds}/judge.parquet", ROOT / f"data/{ds}/judge_groq.parquet"
     if not (a.exists() and b.exists()):
         continue

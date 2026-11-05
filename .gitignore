@@ -4,8 +4,19 @@ results/scores_*.npz
 logs/
 __pycache__/
 *.pyc
-# derived dataset texts: regenerated deterministically by scripts/01*.py from the public datasets
+# derived dataset texts: regenerated deterministically by scripts/01*.py from the public datasets ...
 data/*/texts.parquet
+# ... except where they contain LLM-generated edits (API outputs are not reproducible exactly)
+!data/bios/texts.parquet
+!data/amzneg/texts.parquet
+!data/amzfp/texts.parquet
+!data/*_planted/texts.parquet
+!data/cebab_gold/texts.parquet
+# local backups and superseded pilot / pre-LLM-edit files
+backup_*/
+data/bios/*_v1_*
+data/bios/llm_edits_pilot_*
+data/bios/*_before_llm_edits.parquet
 data/human_audit_sample.csv
 data/human_audit_key.csv
 # LaTeX build products / old drafts / template
@@ -18,3 +29,4 @@ paper/*.blg
 paper/*.out
 data/edit_sanity_sample.html
 data/edit_sanity_sample.csv
+paper/arxiv_source.tar.gz

@@ -1,0 +1,8 @@
+\textbf{CivilComments} (WILDS; \citealp{borkan2019nuanced,koh2021wilds}) pairs toxicity ($T$) with a human annotation that the comment mentions Muslims or LGBTQ people ($N$). Following \citet{dixon2018measuring} and \citet{garg2019counterfactual}, we swapped those identity terms for Christian/straight terms and, on 400 further comments, ``Christian'' for ``Muslim'', averaging the two directions; placebos also include ``Christian''$\to$``Protestant''. Both judges reject most of these swaps (Table~\ref{tab:data}: \civilAccFwd{} and \civilAccRev{} accepted by both), mostly because swapping the group changes a claim about it (``the baker discriminated against the gay couple''), not just its name. We therefore report Civil here only. Its results agree with the main settings: at $\rhot=0.9$ near-best extractors have $\cfn$ \nbCFmincivilQNine--\nbCFmaxcivilQNine{} (Qwen; Gemma \nbCFmincivilGNine--\nbCFmaxcivilGNine) and $\conf{}<0.5$ throughout, i.e.\ the most decodable toxicity scores rank non-toxic comments about Muslims or LGBTQ people above toxic comments that mention neither; at $\rhot=0.5$ the net shift is small (\nbCFmincivilQFive--\nbCFmaxcivilQFive); and choosing by \conf{} lowers $\cfn$ at a larger accuracy cost than in the main settings, because the nuisance is predictive in-distribution (Table~\ref{tab:near-all} and the selection table in Appendix~\ref{app:more}).
+
+\begin{table}[h]
+\centering\small\setlength{\tabcolsep}{2pt}
+\resizebox{\columnwidth}{!}{\input{tables/tab_near_all}}
+\caption{As Table~\ref{tab:near}, all settings including Civil (accepted edits; Civil: mean of both swap directions).}
+\label{tab:near-all}
+\end{table}

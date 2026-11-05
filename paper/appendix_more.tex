@@ -10,11 +10,11 @@
 \caption{As Table~\ref{tab:near}, at $\rhot=0.7$ (equivalence tests were run at $\rhot\in\{0.5,0.9\}$ only).}
 \end{table}
 
-\begin{table}[h]
-\centering\small\setlength{\tabcolsep}{2pt}
-\resizebox{\columnwidth}{!}{\input{tables/tab_corr}}
+\begin{table*}[t]
+\centering\small\setlength{\tabcolsep}{4pt}
+\resizebox{0.8\textwidth}{!}{\input{tables/tab_corr}}
 \caption{Spearman correlation of test \dec{} with each facet across competitive standard extractors, with 95\% bootstrap CIs over extractors. Hyperparameter variants of one family are not independent, so CIs are descriptive.}
-\end{table}
+\end{table*}
 
 \begin{table}[h]
 \centering\small\setlength{\tabcolsep}{2pt}
@@ -22,7 +22,7 @@
 \caption{Logistic probe vs.\ nuisance-erased probe, each family's layer and hyperparameter chosen on development \dec{} (training sample 0). Equiv.: 90\% CI of the \dec{} difference within $\pm0.01$.}
 \end{table}
 
-\paragraph{Readout ablation.} Reading the last non-special token instead of mean pooling (Qwen2.5-7B, Table~\ref{tab:pooling}) preserves the pattern: under correlated training, near-best extractors differ substantially in $\cfn$, decorrelated training largely removes it, and Conflict-based selection lowers $\cfn$. On Civil the last-token readout is less decodable and the selection costs considerably more accuracy.
+\paragraph{Readout ablation.} Reading the last non-special token instead of mean pooling (Qwen2.5-7B, Table~\ref{tab:pooling}) preserves the pattern: under correlated training, near-best extractors differ substantially in $\cfn$, decorrelated training largely removes it, and Conflict-based selection lowers $\cfn$. On Amazon-Neg there is little to lower under either readout. On Civil the last-token readout is less decodable and the selection costs considerably more accuracy.
 
 \IfFileExists{tables/tab_pooling.tex}{\input{tables/tab_pooling}}{}
 

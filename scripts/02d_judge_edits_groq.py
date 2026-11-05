@@ -16,7 +16,9 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-MODEL = "openai/gpt-oss-120b"
+import os
+MODEL = os.environ.get("GROQ_JUDGE", "openai/gpt-oss-120b")
+KINDS = [k for k in os.environ.get("KINDS", "").split(",") if k]
 PRICE_IN, PRICE_OUT = 0.15e-6, 0.75e-6       # USD per token; output priced conservatively (reasoning tokens are billed)
 BUDGET_USD = 1.60                             # user allowed up to $2
 KEY = (Path.home() / ".groq_key").read_text().strip()
@@ -25,7 +27,7 @@ KEY = (Path.home() / ".groq_key").read_text().strip()
 src = (ROOT / "scripts/02c_judge_edits.py").read_text()
 ns = {}
 exec(src[src.index("ATTR = {"):src.index("tok = AutoTokenizer")], ns)  # noqa: S102 (our own file)
-ATTR, PROMPT = ns["ATTR"], ns["PROMPT"]
+ATTR, PROMPT, NOTE = ns["ATTR"], ns["PROMPT"], ns["NOTE"]
 
 # all CEBaB and Civil pairs; a stratified sample of BiasBios keeps the total well inside the budget
 WORKERS = 6
@@ -37,9 +39,10 @@ LOCK = threading.Lock()
 
 def call(prompt):
     global spent, n429
-    body = json.dumps({"model": MODEL, "temperature": 0, "max_tokens": 600, "reasoning_effort": "low",
-                       "include_reasoning": False, "response_format": {"type": "json_object"},
-                       "messages": [{"role": "user", "content": prompt}]}).encode()
+    b = {"model": MODEL, "temperature": 0, "max_tokens": 600, "response_format": {"type": "json_object"},
+         "messages": [{"role": "user", "content": prompt}]}
+    b.update({"reasoning_effort": "low", "include_reasoning": False} if "gpt-oss" in MODEL else {"reasoning_effort": "none"})
+    body = json.dumps(b).encode()
     req = urllib.request.Request("https://api.groq.com/openai/v1/chat/completions", data=body,
                                  headers={"Authorization": f"Bearer {KEY}", "Content-Type": "application/json",
                                           "User-Agent": "dv-judge/1.0"})
@@ -70,9 +73,11 @@ for ds in sys.argv[1:] or ["cebab", "civil", "bios"]:
     pr = pd.read_parquet(ROOT / f"data/{ds}/pairs.parquet").reset_index(drop=True)
     swap = rng.rand(len(pr)) < 0.5
     pr["swap"] = swap
+    if KINDS:
+        pr = pr[pr.kind.isin(KINDS)]
     keep = []
     for kind, g in pr.groupby("kind"):
-        cap = CAP.get(ds, {}).get(kind)
+        cap = None if KINDS else CAP.get(ds, {}).get(kind)
         keep.append(g if cap is None or len(g) <= cap else g.sample(n=cap, random_state=0))
     sub = pd.concat(keep).sort_index()
     def judge(p):
@@ -81,12 +86,12 @@ for ds in sys.argv[1:] or ["cebab", "civil", "bios"]:
         a, b = tx[p.uid_a][:1500], tx[p.uid_b][:1500]
         if p.swap:
             a, b = b, a
-        out = call(PROMPT.format(a=a, b=b, t=ATTR[ds][0], n=ATTR[ds][1]))
+        out = call(PROMPT.format(a=a, b=b, t=ATTR[ds][0], n=ATTR[ds][1], note=NOTE.get(ds, "")))
         try:
             d = {k: str(v).strip().lower() for k, v in json.loads(out).items()}
         except Exception:
             d = {}
-        return dict(uid_a=p.uid_a, uid_b=p.uid_b, kind=p.kind, raw=out,
+        return dict(uid_a=p.uid_a, uid_b=p.uid_b, kind=p.kind, judge_model=MODEL, raw=out,
                     target_same=d.get("q1", ""), nuis_same=d.get("q2", ""), other_change=d.get("q5", ""),
                     src_fluent=d.get("q4" if p.swap else "q3", ""), edit_fluent=d.get("q3" if p.swap else "q4", ""))
 
@@ -99,5 +104,11 @@ for ds in sys.argv[1:] or ["cebab", "civil", "bios"]:
                     print(f"{ds}: {len(rows)}/{len(sub)}  spent ${spent:.3f}  429s {n429}", flush=True)
     if spent >= BUDGET_USD:
         print(f"budget reached (${spent:.2f})", flush=True)
-    pd.DataFrame(rows).to_parquet(ROOT / f"data/{ds}/judge_groq.parquet")
+    outp = ROOT / f"data/{ds}/judge_groq.parquet"
+    new = pd.DataFrame(rows)
+    if KINDS and outp.exists():
+        prev = pd.read_parquet(outp)
+        prev = prev[~prev.kind.isin(KINDS)]
+        new = pd.concat([prev, new], ignore_index=True)
+    new.to_parquet(outp)
     print(f"{ds}: done {len(rows)} pairs; cumulative spend ${spent:.3f}", flush=True)

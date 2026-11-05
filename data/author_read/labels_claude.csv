@@ -1,0 +1,101 @@
+item,label,note
+1,ok,
+2,unnatural,"""have no disparity"" stilted"
+3,ok,
+4,ok,
+5,unnatural,"""son has pdd nos"" without article; ""the son"""
+6,ok,
+7,ok,
+8,ok,
+9,unnatural,"""zero comments about that"""
+10,ok,also repairs source grammar
+11,unnatural,"""gift set is adored"", dangling ""As a collector"""
+12,ok,
+13,ok,
+14,ok,
+15,ok,
+16,ok,
+17,ok,
+18,ok,
+19,wrong,"advice ""Get the case"" became statement ""I get the case"""
+20,unnatural,"passive ""has been given""; drops ""our"""
+21,ok,
+22,ok,
+23,ok,
+24,ok,
+25,ok,
+26,ok,
+27,unnatural,"""lack any effect"""
+28,ok,
+29,ok,
+30,unnatural,"""got not the right size"" ungrammatical"
+31,ok,
+32,ok,
+33,unnatural,"""not using a pre-written script"" is an inference, not a paraphrase"
+34,unnatural,"""for boyfriend"" without possessive"
+35,wrong,"""A not ordinary character"": weaker than one-of-a-kind, ungrammatical"
+36,ok,
+37,ok,
+38,ok,
+39,unnatural,"""I have too much hiss"""
+40,ok,
+41,unnatural,"""real, but mighty warriors"": contrast no longer makes sense"
+42,ok,
+43,ok,
+44,ok,
+45,ok,
+46,ok,generic you -> I
+47,ok,
+48,ok,
+49,ok,
+50,ok,
+51,unnatural,"""will not leave you without courage"""
+52,ok,
+53,wrong,"""smooth"" -> ""not rough"" loses the compliment"
+54,unnatural,"""worst web cam's purchased"""
+55,ok,
+56,unnatural,"""avoid repeating my order"""
+57,ok,
+58,ok,
+59,ok,
+60,ok,loses the capitalized emphasis
+61,ok,
+62,ok,
+63,ok,
+64,ok,
+65,ok,
+66,ok,
+67,ok,
+68,ok,
+69,ok,
+70,unnatural,"""fails to do"" implies inadequacy where the source does not"
+71,ok,
+72,unnatural,"""the not correct image"""
+73,ok,
+74,unnatural,"""things no longer present"""
+75,ok,
+76,ok,
+77,wrong,"""second rate"" -> ""not high-quality"": weaker"
+78,unnatural,"""The 3 year old son"""
+79,ok,
+80,ok,
+81,wrong,"""one edition behind"" became a vaguer, garbled claim"
+82,wrong,"""Works well"" -> ""does not fail"": weaker"
+83,ok,
+84,ok,
+85,ok,
+86,ok,
+87,ok,
+88,ok,
+89,ok,
+90,unnatural,"""the not sound character"""
+91,unnatural,"""for the hubs"""
+92,ok,
+93,wrong,"""not visible and smell too"" broken"
+94,ok,less specific but same complaint
+95,ok,
+96,ok,
+97,ok,
+98,ok,
+99,ok,
+100,ok,

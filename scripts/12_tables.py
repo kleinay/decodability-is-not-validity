@@ -3,13 +3,16 @@ paper/tables/numbers.tex (\\newcommand macros). Nothing in the paper is typed by
 import json
 from pathlib import Path
 
+import sys
+
 import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 RES, OUT = ROOT / "results", ROOT / "paper" / "tables"
 OUT.mkdir(exist_ok=True)
-DSN = {"cebab": "CEBaB", "bios": "BiasBios", "civil": "Civil"}
+sys.path.insert(0, str(ROOT / "src"))
+from dv.datasets import ALL, DESC, MAIN, NAME as DSN  # noqa: E402
 MN = {"qwen7b": "Q", "gemma9b": "G"}
 macros = {}
 
@@ -57,13 +60,13 @@ Gcf = pd.read_csv(RES / "rev_G_cf_robustness.csv")
 KN = json.load(open(RES / "rev_key_numbers.json"))
 
 # ---------------------------------------------------------------- Table: near-best (main, standard pool)
-def near_table(rhos, fname, caption_rho):
+def near_table(rhos, fname, caption_rho, dss):
     lines = [r"\begin{tabular}{@{}llccccc@{}}", r"\toprule",
              r" & & best & \#near & $\cfn$ near-best & $\cfn$ equiv. & \conf{} \\",
              r" & & \dec{} & (equiv.) & range & range & range \\", r"\midrule"]
     for rho in rhos:
         lines.append(rf"\multicolumn{{7}}{{@{{}}l}}{{\emph{{{caption_rho[rho]}}}}}\\")
-        for ds in DSN:
+        for ds in dss:
             for mo in MN:
                 a = A[(A.dataset == ds) & (A.model == mo) & (A.rho == rho) & (A.pool == "standard") & (A.defined_on == "test_dec")].iloc[0]
                 b = Bq[(Bq.dataset == ds) & (Bq.model == mo) & (Bq.rho == rho) & (Bq.pool == "standard")]
@@ -77,8 +80,9 @@ def near_table(rhos, fname, caption_rho):
     (OUT / fname).write_text("\n".join(lines) + "\n")
 
 
-near_table([0.9, 0.5], "tab_near.tex", {0.9: r"$\rhot=0.9$ (correlated training data)", 0.5: r"$\rhot=0.5$ (decorrelated)"})
-near_table([0.7], "tab_near_rho07.tex", {0.7: r"$\rhot=0.7$"})
+near_table([0.9], "tab_near.tex", {0.9: r"$\rhot=0.9$ (correlated training data)"}, MAIN)
+near_table([0.9, 0.5], "tab_near_all.tex", {0.9: r"$\rhot=0.9$ (correlated training data)", 0.5: r"$\rhot=0.5$ (decorrelated)"}, ALL)
+near_table([0.7], "tab_near_rho07.tex", {0.7: r"$\rhot=0.7$"}, ALL)
 
 # ---------------------------------------------------------------- Table: selection
 crit = ["max_dec", "max_conflict", "min_leak_at_dec", "max_dec_minus_leak"]
@@ -103,12 +107,20 @@ lines += [r"\bottomrule", r"\end{tabular}"]
 (OUT / "tab_select.tex").write_text("\n".join(lines) + "\n")
 
 # selection macros (rho = 0.9)
-sel = Dd[(Dd.rho == 0.9)]
+sel = Dd[(Dd.rho == 0.9) & Dd.dataset.isin(MAIN)]  # main-text claims pool the main datasets only
 s_std_conf = sel[(sel.pool == "standard") & (sel.criterion == "max_conflict")]
 s_full_conf = sel[(sel.pool == "full") & (sel.criterion == "max_conflict")]
 mac("selStdConfAllSeeds", str(bool((s_std_conf.d_CF_worst < 0).all())))
 mac("selStdConfCFmin", f2(-s_std_conf.d_CF.max()))
 mac("selStdConfCFmax", f2(-s_std_conf.d_CF.min()))
+sens = s_std_conf[s_std_conf.dataset.isin(["cebab", "bios", "amzfp"])]   # settings where the default pick is sensitive
+mac("selSensConfCFmin", f2(-sens.d_CF.max()))
+mac("selSensConfCFmax", f2(-sens.d_CF.min()))
+mac("selSensConfDecMeanWorst", f3(-sens.d_dec.min(), signed=False))
+mac("selSensConfDecWorst", f3(-sens.d_dec_worst.min(), signed=False))
+mac("selSensNfail", str(int((sens.d_CF_worst >= 0).sum())))
+mac("selFullConfAllSeeds", str(bool((s_full_conf.d_CF_worst < 0).all())))
+mac("selFullConfDecWorstSample", f3(-s_full_conf.d_dec_worst.min(), signed=False))
 mac("selStdConfDecWorst", f3(s_std_conf.d_dec_worst.min(), signed=False).replace("$-$", ""))
 mac("selFullConfCFmin", f2(-s_full_conf.d_CF.max()))
 mac("selFullConfCFmax", f2(-s_full_conf.d_CF.min()))
@@ -116,7 +128,7 @@ mac("selFullConfDecWorst", f3(-s_full_conf.d_dec_worst.min(), signed=False))
 mac("selStdConfDecMeanWorst", f3(-s_std_conf.d_dec.min(), signed=False))
 mac("selFullConfDecMeanWorst", f3(-s_full_conf.d_dec.min(), signed=False))
 selD = pd.read_csv(RES / "rev_D_selection_by_seed.csv")
-selF = selD[(selD.rho == 0.9) & (selD.pool == "full")]
+selF = selD[(selD.rho == 0.9) & (selD.pool == "full") & selD.dataset.isin(MAIN)]
 share = selF.groupby("criterion").extractor.apply(lambda x: x.str.startswith("ne_").mean())
 mac("neShareMinLeak", f"{share['min_leak_at_dec']:.0%}".replace("%", "\\%"))
 nfail = sel[sel.d_CF_worst >= 0][["dataset", "model", "pool", "criterion"]]
@@ -137,13 +149,13 @@ for ds in DSN:
     rows.append((ds, acc, g.groupby("kind").n.max().to_dict()))
 lines = [r"\begin{tabular}{@{}llccc@{}}", r"\toprule",
          r" & target $T$ / nuisance $N$ & $N$ edits & judged by both & accepted \\", r"\midrule"]
-desc = {"cebab": "service / food sentiment", "bios": "surgeon vs.\\ nurse / gender", "civil": "toxic / Muslim or LGBTQ"}
+desc = DESC
 for ds in DSN:
     kinds = ["nuisance", "nuisance_rev"] if ds == "civil" else ["nuisance"]
     gen = "+".join(str(int(n_generated[ds][k])) for k in kinds)
     jb = "+".join(str(int(Gag[(Gag.dataset == ds) & (Gag.kind == k)].n.iloc[0])) for k in kinds)
     acc = ", ".join(f"{100 * Gag[(Gag.dataset == ds) & (Gag.kind == k)].accept_both.iloc[0]:.0f}\\%" for k in kinds)
-    lines.append(f"{DSN[ds]} & {desc[ds]} & {gen} & {jb} & {acc} \\\\")
+    lines.append(f"{DSN[ds] + ('$^*$' if ds not in MAIN else '')} & {desc[ds]} & {gen} & {jb} & {acc} \\\\")
 lines += [r"\bottomrule", r"\end{tabular}"]
 (OUT / "tab_data.tex").write_text("\n".join(lines) + "\n")
 
@@ -174,7 +186,7 @@ for _, r in C[C.pool == "standard"].iterrows():
     lines.append(f"{DSN[r.dataset]} & {MN[r.model]} & {r.rho} & {cell('CF')} & {cell('CFABS')} & {cell('test_conflict')} & {cell('test_leak_abs')} \\\\")
 lines += [r"\bottomrule", r"\end{tabular}"]
 (OUT / "tab_corr.tex").write_text("\n".join(lines) + "\n")
-c9 = C[(C.pool == "standard") & (C.rho == 0.9)]
+c9 = C[(C.pool == "standard") & (C.rho == 0.9) & C.dataset.isin(MAIN)]
 mac("corrCFmin", f2(c9.rho_CF.min(), True))
 mac("corrCFmax", f2(c9.rho_CF.max(), True))
 mac("corrCFnSigNeg", str(int((c9.rho_CF_hi < 0).sum())))
@@ -270,13 +282,16 @@ mac("cfNnbMin", f2(min(cf_n)))
 mac("cfNnbMax", f2(max(cf_n)))
 
 # ---------------------------------------------------------------- robustness / placebo macros
-mac("robAllValMin", f2(Gcf.spearman_all_vs_val.min()))
-mac("robSDMin", f2(Gcf.spearman_cf_vs_cfsd.min()))
-mac("robAbsMinSevenUp", f2(Gcf[Gcf.rho >= 0.7].spearman_cf_vs_cfabs.min()))
+Gm = Gcf[Gcf.dataset.isin(MAIN)]
+mac("robAllValMin", f2(Gm.spearman_all_vs_val.min()))
+mac("robSDMin", f2(Gm.spearman_cf_vs_cfsd.min()))
+mac("robAbsMinSevenUp", f2(Gm[Gm.rho >= 0.7].spearman_cf_vs_cfabs.min()))
+mac("robAbsMinNine", f2(Gm[Gm.rho == 0.9].spearman_cf_vs_cfabs.min()))
+mac("robDirMinNine", f2(Gm[Gm.rho == 0.9].spearman_dirpos_vs_dirneg.min()))
 pcol = "cfabs_placebo_val_median" if "cfabs_placebo_val_median" in Gcf else "cfabs_placebo_all_median"
-mac("placeboMax", f2(Gcf[pcol].max()))
-mac("placeboMin", f2(Gcf[pcol].min()))
-g9 = Gcf[Gcf.rho == 0.9]
+mac("placeboMax", f2(Gm[pcol].max()))
+mac("placeboMin", f2(Gm[pcol].min()))
+g9 = Gm[Gm.rho == 0.9]
 acol = "cfabs2_val_median" if "cfabs2_val_median" in Gcf else "cfabs2_all_median"
 mac("nuisAbsNineMin", f2(g9[acol].min()))
 mac("nuisAbsNineMax", f2(g9[acol].max()))
@@ -296,6 +311,96 @@ mac("synDecRangeNe", f2(rngs.loc["ne_lr_C0.01"].dmax - rngs.loc["ne_lr_C0.01"].d
 mac("synCFRangeStdMin", f2((std_.cmax - std_.cmin).min()))
 mac("synCFRangeStdMax", f2((std_.cmax - std_.cmin).max()))
 
+for ds in ["amzneg", "amzfp"]:
+    for rho, rn in [(0.5, "Five"), (0.9, "Nine")]:
+        g = Gcf[(Gcf.dataset == ds) & (Gcf.rho == rho)]
+        mac(f"dirPos{ds}{rn}", rng_(g.cf_nuisance_dirpos_median.min(), g.cf_nuisance_dirpos_median.max()))
+        mac(f"dirNeg{ds}{rn}", rng_(g.cf_nuisance_dirneg_median.min(), g.cf_nuisance_dirneg_median.max()))
+        mac(f"sgn{ds}{rn}", rng_(g.cf2_val_median.min(), g.cf2_val_median.max()))
+        mac(f"abs{ds}{rn}", rng_(g.cfabs2_val_median.min(), g.cfabs2_val_median.max()))
+        mac(f"plc{ds}{rn}", rng_(g.cfabs_placebo_val_median.min(), g.cfabs_placebo_val_median.max()))
+cg = Gag[Gag.dataset == "civil"].set_index("kind").accept_both
+mac("civilAccFwd", f"{100 * cg['nuisance']:.0f}\\%"); mac("civilAccRev", f"{100 * cg['nuisance_rev']:.0f}\\%")
+for ds in ["amzneg", "amzfp"]:
+    g = Gcf[Gcf.dataset == ds].pivot_table(index="model", columns="rho", values="cf2_val_median")
+    inc = g[0.9] - g[0.5]
+    mac(f"inc{ds}", rng_(inc.min(), inc.max()))
+nat = json.load(open(ROOT / "data/amz/natural_rates.json"))
+mac("amzNegNeg", f2(nat["P(NEG|negative)"])); mac("amzNegPos", f2(nat["P(NEG|positive)"]))
+mac("amzFpNeg", f2(nat["P(FP|negative)"])); mac("amzFpPos", f2(nat["P(FP|positive)"]))
+
+# ---------------------------------------------------------------- judge validation (14_judge_validation.py, 15_filter_robustness.py)
+if (RES / "rev_J_cebab_gold.csv").exists():
+    J = pd.read_csv(RES / "rev_J_cebab_gold.csv").set_index(["judge", "question"])
+    qs = ["target_same", "nuis_same"]
+    mac("jvGptQ", rng_(*sorted(J.loc[[("j2", q) for q in qs], "acc"])))
+    mac("jvQwenQ", rng_(*sorted(J.loc[[("j1", q) for q in qs], "acc"])))
+    mac("jvHumanQ", rng_(*sorted(J.loc[[("j1", q) for q in qs], "human_single_vs_majority"])))
+    e = J.loc[("both", "accept_edits")]
+    mac("jvN", str(int(e.n))); mac("jvNbad", str(int(e.n_gold_bad)))
+    mac("jvBadRate", f2(e.n_gold_bad / e.n)); mac("jvGoodRate", f2(1 - e.n_gold_bad / e.n)); mac("jvPrec", f2(e.precision))
+    mac("jvRejBad", f2(e.reject_gold_bad)); mac("jvRecall", f2(e.recall_gold_ok))
+    Pl = pd.read_csv(RES / "rev_J_planted.csv")
+    PT = {"clean": "none (retest)", "flip": "opinion reversed", "strength": "opinion stronger/weaker",
+          "occupation": "occupation changed", "mixed_gender": "gender cues mixed", "garble": "garbled (rule)",
+          "fact": "minor fact changed"}
+    lines = [r"\begin{tabular}{@{}llccc@{}}", r"\toprule", r"data & planted error & Qwen & gpt-oss & both \\", r"\midrule"]
+    for ds in ["amzneg", "amzfp", "bios"]:
+        for i, pt in enumerate([p for p in PT if p in set(Pl[Pl.dataset == ds].ptype)]):
+            r = Pl[(Pl.dataset == ds) & (Pl.ptype == pt)].iloc[0]
+            lines.append(f"{DSN[ds] if i == 0 else ''} & {PT[pt]} & {f2(r.j1_accept)} & {f2(r.j2_accept)} & {f2(r.both_accept)} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    (OUT / "tab_planted.tex").write_text("\n".join(lines) + "\n")
+    bad = Pl[Pl.ptype.isin(["flip", "occupation", "garble"])]
+    mac("plBadMax", f2(bad.both_accept.max())); mac("plFlipMax", f2(Pl[Pl.ptype == "flip"].both_accept.max()))
+    mac("plStrGptMin", f2(Pl[Pl.ptype == "strength"].j2_accept.min())); mac("plStrGptMax", f2(Pl[Pl.ptype == "strength"].j2_accept.max()))
+    mac("plStrBothMax", f2(Pl[Pl.ptype == "strength"].both_accept.max()))
+    mac("plMixBoth", f2(Pl[Pl.ptype == "mixed_gender"].both_accept.max()))
+    cl = Pl[Pl.ptype == "clean"].both_accept
+    mac("plCleanMin", f2(cl.min())); mac("plCleanMax", f2(cl.max()))
+    fa = Pl[Pl.ptype == "fact"].both_accept
+    mac("plFactMin", f2(fa.min())); mac("plFactMax", f2(fa.max()))
+if (RES / "rev_I_filter_robustness.csv").exists():
+    I = pd.read_csv(RES / "rev_I_filter_robustness.csv")
+    Im = I[I.dataset.isin(MAIN) & I.rho.isin([0.5, 0.9])]
+    mac("frSpearMin", f2(Im.spearman_vs_both.min()))
+    I9 = Im[Im.rho == 0.9]
+    mac("frSelAllLower", str(bool((I9.selconf_dCF_full < 0).all())))
+    mac("frSelFullMin", f2(-I9.selconf_dCF_full.max())); mac("frSelFullMax", f2(-I9.selconf_dCF_full.min()))
+    for f in ["all", "both"]:
+        g = I9[(I9.dataset == "cebab")]
+        g = g[g["filter"] == f]
+        mac(f"frCebab{f.capitalize()}", rng_(g.near_min.min(), g.near_max.max()))
+    lines = [r"\begin{tabular}{@{}lccccc@{}}", r"\toprule",
+             r" & all & Qwen & gpt-oss & either & both \\", r"\midrule"]
+    for ds in MAIN:
+        g = I9[I9.dataset == ds].set_index(["filter", "model"])
+        row = []
+        for f in ["all", "j1", "j2", "either", "both"]:
+            row.append(f"{int(g.loc[(f, 'qwen7b')].n_pairs)}: " + "/".join(
+                rng_(g.loc[(f, m)].near_min, g.loc[(f, m)].near_max) for m in ["qwen7b", "gemma9b"]))
+        lines.append(f"{DSN[ds]} & " + " & ".join(row) + r" \\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    (OUT / "tab_filter.tex").write_text("\n".join(lines) + "\n")
+
+# ---------------------------------------------------------------- LLM readers of accepted Amazon edits (16_author_read_sample.py)
+AR = ROOT / "data/author_read"
+if (AR / "labels_claude.csv").exists() and (AR / "labels_chatgpt.csv").exists():
+    from sklearn.metrics import cohen_kappa_score
+    K = pd.read_csv(AR / "key.csv")
+    for w in ["claude", "chatgpt"]:
+        K[w] = K["item"].map(pd.read_csv(AR / f"labels_{w}.csv").set_index("item").label)
+    for ds in ["amzneg", "amzfp"]:
+        g = K[K.dataset == ds]
+        w = [(g[r] == "wrong").mean() for r in ["claude", "chatgpt"]]
+        u = [(g[r] != "ok").mean() for r in ["claude", "chatgpt"]]
+        tag = {"amzneg": "Neg", "amzfp": "Fp"}[ds]
+        mac(f"rdWrong{tag}", rng_(min(w), max(w)))
+        mac(f"rdNotOk{tag}", rng_(min(u), max(u)))
+    mac("rdAgree", f2((K.claude == K.chatgpt).mean())); mac("rdKappa", f2(cohen_kappa_score(K.claude, K.chatgpt)))
+    sub = K[(K.dataset == "amzneg") & (K.n_src == 0)]
+    mac("rdWrongNegAdd", rng_(*sorted((sub[r] == "wrong").mean() for r in ["claude", "chatgpt"])))
+
 with open(OUT / "numbers.tex", "w") as fh:
     for k, v in sorted(macros.items()):
         fh.write(f"\\newcommand{{\\{k}}}{{{v}}}\n")
@@ -305,7 +410,7 @@ print(f"wrote {len(macros)} macros and tables:", sorted(p.name for p in OUT.glob
 lines = [r"\begin{tabular}{@{}llcccc@{}}", r"\toprule",
          r" & & \multicolumn{3}{c}{standard extractors} & + erased \\",
          r" & & max \dec{} & max \conf{} & min $|$\leak{}$|$ & max \conf{} \\", r"\midrule"]
-for ds in DSN:
+for ds in MAIN:
     for mo in MN:
         cells = []
         for pool, c in [("standard", "max_dec"), ("standard", "max_conflict"), ("standard", "min_leak_at_dec"), ("full", "max_conflict")]:

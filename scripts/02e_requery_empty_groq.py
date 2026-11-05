@@ -18,7 +18,7 @@ for ds in ["cebab", "civil", "bios"]:
         r = j.loc[i]
         # recover presentation order from the stored fields is not possible; re-randomize is fine for a blind judge
         a, b, sw = tx[r.uid_a][:1500], tx[r.uid_b][:1500], False
-        out = ns["call"](ns["PROMPT"].format(a=a, b=b, t=ns["ATTR"][ds][0], n=ns["ATTR"][ds][1]))
+        out = ns["call"](ns["PROMPT"].format(a=a, b=b, t=ns["ATTR"][ds][0], n=ns["ATTR"][ds][1], note=ns["NOTE"].get(ds, "")))
         try:
             d = {k: str(v).strip().lower() for k, v in json.loads(out).items()}
         except Exception:

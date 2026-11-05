@@ -3,6 +3,7 @@ probed models). The two texts are shown in random order, without saying which on
 answers the same questions about target and nuisance, so it is not told which attribute is supposed to change.
 Writes data/<ds>/judge.parquet (one row per pair); the human-annotation sample is 02f_human_audit_sample.py."""
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -22,6 +23,18 @@ ATTR = {
     "civil": ("how toxic the comment is (rude, disrespectful, insulting or hateful language)",
               "which religious or sexual-orientation group, if any, the comment is about"),
 }
+# Dataset-specific note (empty for CEBaB/Civil, whose prompts are unchanged). BiasBios: a pronoun swap that keeps a
+# gendered first name yields a text whose gender cues contradict each other; the judge must see that as "unclear".
+NOTE = {
+    "bios": (" Note: a person's gender can be signalled by pronouns (he/she), gendered nouns (e.g. husband, mother)"
+             " and first names. If these cues contradict each other within a text (e.g. a typically female first name"
+             " with he/him), treat the gender in that text as unclear."),
+}
+# validation sets (14_judge_validation.py) are judged with their source dataset's wording
+for _k in ["cebab_gold", "bios_planted"]:
+    ATTR[_k] = ATTR[_k.split("_")[0]]
+    if _k.split("_")[0] in NOTE:
+        NOTE[_k] = NOTE[_k.split("_")[0]]
 PROMPT = """You will compare two short texts.
 
 Text 1:
@@ -30,7 +43,7 @@ Text 1:
 Text 2:
 <<<{b}>>>
 
-Answer each question about the two texts.
+Answer each question about the two texts.{note}
 Q1. Is {t} the same in Text 1 and Text 2? (yes / no / unclear)
 Q2. Is {n} the same in Text 1 and Text 2? (yes / no / unclear)
 Q3. Is Text 1 fluent, grammatical English (as fluent as typical text of this kind)? (yes / no)
@@ -46,13 +59,16 @@ rng = np.random.RandomState(3)
 for ds in sys.argv[1:] or ["cebab", "bios", "civil"]:
     tx = pd.read_parquet(ROOT / f"data/{ds}/texts.parquet").set_index("uid").text
     pr = pd.read_parquet(ROOT / f"data/{ds}/pairs.parquet").reset_index(drop=True)
+    KINDS = [k for k in os.environ.get("KINDS", "").split(",") if k]
+    if KINDS:  # judge only these kinds (e.g. regenerated edits); merge with verdicts already on disk
+        pr = pr[pr.kind.isin(KINDS)].reset_index(drop=True)
     swap = rng.rand(len(pr)) < 0.5  # True: edited text shown as Text 1
     prompts = []
     for (_, p), sw in zip(pr.iterrows(), swap):
         a, b = tx[p.uid_a][:1500], tx[p.uid_b][:1500]
         if sw:
             a, b = b, a
-        msg = [{"role": "user", "content": PROMPT.format(a=a, b=b, t=ATTR[ds][0], n=ATTR[ds][1])}]
+        msg = [{"role": "user", "content": PROMPT.format(a=a, b=b, t=ATTR[ds][0], n=ATTR[ds][1], note=NOTE.get(ds, ""))}]
         prompts.append(tok.apply_chat_template(msg, tokenize=False, add_generation_prompt=True, enable_thinking=False))
     order = np.argsort([len(p) for p in prompts])
     raw = [None] * len(prompts)
@@ -79,6 +95,11 @@ for ds in sys.argv[1:] or ["cebab", "bios", "civil"]:
     out["target_same"], out["nuis_same"], out["other_change"] = P.q1, P.q2, P.q5
     out["src_fluent"] = np.where(swap, P.q4, P.q3)
     out["edit_fluent"] = np.where(swap, P.q3, P.q4)
-    out.to_parquet(ROOT / f"data/{ds}/judge.parquet")
+    old = ROOT / f"data/{ds}/judge.parquet"
+    if KINDS and old.exists():
+        prev = pd.read_parquet(old)
+        prev = prev[~prev.kind.isin(KINDS)]
+        out = pd.concat([prev, out], ignore_index=True)
+    out.to_parquet(old)
     print(ds, out.groupby("kind")[["target_same", "nuis_same", "edit_fluent", "other_change"]]
           .agg(lambda x: x.value_counts(normalize=True).round(2).to_dict()).to_string(), flush=True)

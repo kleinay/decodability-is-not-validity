@@ -23,7 +23,10 @@ STYLE = {"pls": dict(c="#eb6834", marker="s", label="PLS subspace"),
          "lr": dict(c="#2a78d6", marker="o", label="logistic probe"),
          "ne_lr": dict(c="#1baf7a", marker="D", label="nuisance-erased probe"),
          "dom": dict(c="#5f5e5a", marker="^", label="diff-of-means")}
-DS = {"cebab": "CEBaB: service | food", "bios": "BiasBios: surgeon | gender", "civil": "Civil: toxic | identity"}
+import sys  # noqa: E402
+sys.path.insert(0, str(ROOT / "src"))
+from dv.datasets import MAIN, PANEL  # noqa: E402
+DS = {ds: PANEL[ds].replace(": ", "\n").replace("first person", "1st person") for ds in MAIN}
 COMP = 0.05
 
 sub = json.load(open(RES / "rev_key_numbers.json"))["cf_pair_subset"]
@@ -42,7 +45,7 @@ sel = sel[(sel.pool == "standard") & sel.criterion.isin(["max_dec", "max_conflic
 
 
 def main_fig(model, rhos=(0.5, 0.9)):
-    fig, axes = plt.subplots(len(rhos), 3, figsize=(6.3, 1.5 * len(rhos) + 0.45), squeeze=False)
+    fig, axes = plt.subplots(len(rhos), len(DS), figsize=(6.3, 1.45 * len(rhos) + 0.45), squeeze=False)
     for i, rho in enumerate(rhos):
         for j, ds in enumerate(DS):
             ax = axes[i, j]

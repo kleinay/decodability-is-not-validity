@@ -7,12 +7,15 @@ import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
+import sys  # noqa: E402
+sys.path.insert(0, str(ROOT / "src"))
+from dv.datasets import ALL as DATASETS  # noqa: E402
 rng = np.random.RandomState(11)
 rows, key = [], []
-for ds in ["cebab", "bios", "civil"]:
+for ds in DATASETS:
     tx = pd.read_parquet(ROOT / f"data/{ds}/texts.parquet").set_index("uid").text
     pr = pd.read_parquet(ROOT / f"data/{ds}/pairs.parquet")
-    for kind, g in pr.groupby("kind"):
+    for kind, g in pr[~pr.kind.str.endswith("_rule")].groupby("kind"):
         for _, p in g.sample(n=min(25, len(g)), random_state=rng).iterrows():
             sw = rng.rand() < 0.5
             a, b = (p.uid_b, p.uid_a) if sw else (p.uid_a, p.uid_b)

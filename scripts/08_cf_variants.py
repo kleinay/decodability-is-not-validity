@@ -18,6 +18,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 from dv import validity as V  # noqa: E402
+from dv.datasets import ALL as DATASETS  # noqa: E402
 from dv.judging import accept  # noqa: E402
 
 
@@ -106,7 +107,7 @@ def main(ds, model):
 
 
 if __name__ == "__main__":
-    for ds in ["cebab", "bios", "civil"]:
+    for ds in DATASETS:
         for model in sys.argv[1:] or ["qwen7b", "gemma9b"]:
             if (ROOT / f"results/scores_{ds}_{model}.npz").exists():
                 main(ds, model)

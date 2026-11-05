@@ -1,0 +1,21 @@
+\begin{tabular}{@{}llccc@{}}
+\toprule
+data & planted error & Qwen & gpt-oss & both \\
+\midrule
+Amazon-Neg & none (retest) & .88 & .98 & .86 \\
+ & opinion reversed & .08 & .14 & .06 \\
+ & opinion stronger/weaker & .18 & .68 & .16 \\
+ & garbled (rule) & .12 & .32 & .10 \\
+ & minor fact changed & .76 & .88 & .70 \\
+Amazon-1P & none (retest) & .98 & .92 & .92 \\
+ & opinion reversed & .16 & .12 & .08 \\
+ & opinion stronger/weaker & .18 & .58 & .18 \\
+ & garbled (rule) & .16 & .26 & .10 \\
+ & minor fact changed & .96 & .90 & .88 \\
+BiasBios & none (retest) & .98 & .94 & .94 \\
+ & occupation changed & .02 & .06 & .00 \\
+ & gender cues mixed & .34 & .52 & .18 \\
+ & garbled (rule) & .04 & .10 & .00 \\
+ & minor fact changed & .94 & .52 & .52 \\
+\bottomrule
+\end{tabular}

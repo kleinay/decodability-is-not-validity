@@ -1,0 +1,30 @@
+{
+ "claude": {
+  "ok": {
+   "amzfp": 0.82,
+   "amzneg": 0.64
+  },
+  "unnatural": {
+   "amzfp": 0.16,
+   "amzneg": 0.24
+  },
+  "wrong": {
+   "amzfp": 0.02,
+   "amzneg": 0.12
+  }
+ },
+ "chatgpt": {
+  "ok": {
+   "amzfp": 0.68,
+   "amzneg": 0.58
+  },
+  "unnatural": {
+   "amzfp": 0.18,
+   "amzneg": 0.2
+  },
+  "wrong": {
+   "amzfp": 0.14,
+   "amzneg": 0.22
+  }
+ }
+}

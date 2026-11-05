@@ -1,0 +1,16 @@
+dataset,ptype,n,j1_accept,j2_accept,both_accept
+amzneg,clean,50,0.88,0.98,0.86
+amzneg,fact,50,0.76,0.88,0.7
+amzneg,flip,50,0.08,0.14,0.06
+amzneg,garble,50,0.12,0.32,0.1
+amzneg,strength,50,0.18,0.68,0.16
+amzfp,clean,50,0.98,0.92,0.92
+amzfp,fact,50,0.96,0.9,0.88
+amzfp,flip,50,0.16,0.12,0.08
+amzfp,garble,50,0.16,0.26,0.1
+amzfp,strength,50,0.18,0.58,0.18
+bios,clean,50,0.98,0.94,0.94
+bios,fact,50,0.94,0.52,0.52
+bios,garble,50,0.04,0.1,0.0
+bios,mixed_gender,50,0.34,0.52,0.18
+bios,occupation,50,0.02,0.06,0.0

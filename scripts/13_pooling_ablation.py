@@ -8,7 +8,9 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 RES = ROOT / "results"
 sub = json.load(open(RES / "rev_key_numbers.json"))["cf_pair_subset"]
-DSN = {"cebab": "CEBaB", "bios": "BiasBios", "civil": "Civil"}
+import sys  # noqa: E402
+sys.path.insert(0, str(ROOT / "src"))
+from dv.datasets import NAME as DSN  # noqa: E402
 
 
 def load(ds, mo):
